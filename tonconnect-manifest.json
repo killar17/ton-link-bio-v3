@@ -1,0 +1,8 @@
+// public/tonconnect-manifest.json
+{
+  "url": "https://[YOUR_FINAL_VERCEL_URL]",
+  "name": "TON Identity Linker",
+  "iconUrl": "https://[YOUR_FINAL_VERCEL_URL]/ton-logo.png",
+  "termsOfUseUrl": "https://[YOUR_FINAL_VERCEL_URL]/terms",
+  "privacyPolicyUrl": "https://[YOUR_FINAL_VERCEL_URL]/privacy"
+}
