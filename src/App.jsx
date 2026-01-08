@@ -1,59 +1,86 @@
-import { TonConnectButton, useTonAddress } from '@tonconnect/ui-react';
-import './App.css'; 
+import { TonConnectButton, useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
+import { useState, useEffect } from 'react';
 
 function App() {
-  // Hook to get the connected address
-  const userFriendlyAddress = useTonAddress();
+  const [tonConnectUI] = useTonConnectUI();
+  const userAddress = useTonAddress();
+  const [profile, setProfile] = useState({ name: '', bio: '' });
+  const [status, setStatus] = useState('');
 
-  const handleVerify = async () => {
-    // Try to access the TonConnect UI instance (it may be exposed on window)
-    const tonConnectUI = (typeof window !== 'undefined' && window.tonConnectUI) || globalThis.tonConnectUI;
-    const wallet = tonConnectUI?.wallet;
+  useEffect(() => {
+    if (!tonConnectUI) return;
 
-    // Check if we have the proof from the wallet
-    if (!wallet || !wallet.connectItems?.tonProof) {
-      alert('Please reconnect your wallet to generate proof.');
-      return;
-    }
+    // This MUST be set to 'ready' to trigger the signature request
+    tonConnectUI.setConnectRequestParameters({
+      state: 'ready',
+      value: {
+        tonProof: 'Verify-Me-Please'
+      }
+    });
+  }, [tonConnectUI]);
 
+  const handleSave = async () => {
+    if (!userAddress) return alert('Please connect your wallet first.');
+
+    setStatus('Saving...');
     try {
-      const response = await fetch('/api/verify-proof', {
+      const response = await fetch('/api/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: wallet.account.address,
-          proof: wallet.connectItems.tonProof.proof,
-        }),
+        body: JSON.stringify({ address: userAddress, ...profile }),
       });
 
       const data = await response.json();
       if (data.success) {
-        alert('Success! Identity Verified & Saved to MongoDB.');
+        setStatus('Profile saved.');
+        alert('Profile Saved!');
       } else {
-        alert('Verification failed: ' + (data.message || 'unknown'));
+        setStatus('Save failed.');
+        alert('Save failed.');
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('Server error during verification.');
+    } catch (e) {
+      console.error(e);
+      setStatus('Server error.');
+      alert('Server error.');
     }
   };
 
   return (
-    <div className="App">
-      <h1>TON Identity Linker</h1>
+    <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial' }}>
+      <h1>TON D ID</h1>
+      <TonConnectButton />
 
-      {/* The main button component */}
-      <TonConnectButton /> 
-
-      {userFriendlyAddress && (
-        <>
-          <p>Wallet Connected: <code>{userFriendlyAddress}</code></p>
-          <button onClick={handleVerify}>Verify Identity</button>
-        </>
-      )}
-
-      {!userFriendlyAddress && (
-        <p>Connect your wallet to verify your TON identity.</p>
+      {userAddress && (
+        <div style={{ marginTop: '20px' }}>
+          <h3>Settings</h3>
+          <input
+            placeholder="Name"
+            value={profile.name}
+            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+            style={{ display: 'block', margin: '10px auto', padding: '10px', width: '200px' }}
+          />
+          <textarea
+            placeholder="Bio"
+            value={profile.bio}
+            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+            style={{ display: 'block', margin: '10px auto', padding: '10px', width: '200px' }}
+          />
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '10px' }}>
+            <button
+              onClick={handleSave}
+              style={{ backgroundColor: '#0088cc', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px' }}
+            >
+              Save to Profile
+            </button>
+            <button
+              onClick={() => tonConnectUI?.disconnect()}
+              style={{ backgroundColor: '#ccc', color: '#222', padding: '10px 20px', border: 'none', borderRadius: '5px' }}
+            >
+              Disconnect
+            </button>
+          </div>
+          <p style={{ marginTop: '12px', color: '#666' }}>{status}</p>
+        </div>
       )}
     </div>
   );

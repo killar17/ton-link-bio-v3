@@ -11,7 +11,12 @@ const manifestUrl = 'https://ton-link-bio-v3-tblm.vercel.app/tonconnect-manifest
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     {/* Wrap the App component */}
-    <TonConnectUIProvider manifestUrl={manifestUrl}>
+    <TonConnectUIProvider 
+      manifestUrl={manifestUrl}
+      actionsConfiguration={{
+        twaReturnUrl: 'https://t.me/TON D ID'
+      }}
+    >
       <App />
     </TonConnectUIProvider>
   </React.StrictMode>,
