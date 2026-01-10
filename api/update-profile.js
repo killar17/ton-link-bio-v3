@@ -1,5 +1,5 @@
-import dbConnect from '../../dbConnect';
-import User from '../../models/User';
+import dbConnect from '../../dbConnect.js';
+import User from '../../models/User.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
@@ -7,6 +7,10 @@ export default async function handler(req, res) {
   try {
     await dbConnect(); // If this fails, you get a 500 error
     const { address, name, bio } = req.body;
+
+    console.log('User model is:', User);
+    console.log('User model type:', typeof User);
+    console.log('User.findOneAndUpdate exists:', typeof User.findOneAndUpdate);
 
     const updatedUser = await User.findOneAndUpdate(
       { tonAddress: address },

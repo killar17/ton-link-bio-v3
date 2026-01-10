@@ -1,6 +1,6 @@
 import { TonProofVerifier } from '@ton/ton-connect';
-import dbConnect from '../../dbConnect';
-import User from '../../models/User';
+import dbConnect from '../../dbConnect.js';
+import User from '../../models/User.js';
 
 const HOST_URL = 'https://ton-link-bio-v3-tblm-git-main-killar17s-projects.vercel.app';
 const verifier = new TonProofVerifier({ host: HOST_URL });
@@ -25,6 +25,10 @@ export default async function handler(req, res) {
 
         if (result.isValid) {
             // 3. SUCCESS: Save/Update User record (R2)
+            console.log('User model is:', User);
+            console.log('User model type:', typeof User);
+            console.log('User.findOneAndUpdate exists:', typeof User.findOneAndUpdate);
+
             const user = await User.findOneAndUpdate(
                 { tonAddress: address }, 
                 { 
