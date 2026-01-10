@@ -7,6 +7,12 @@ const UserSchema = new mongoose.Schema({
     required: [true, 'TON Address is required.'],
     unique: true,
   },
+  // Display name for the user's profile
+  name: {
+    type: String,
+    default: "Anonymous",
+    maxLength: [100, 'Name cannot be more than 100 characters.'],
+  },
   // The cryptographic TON Proof data payload
   proofs: {
     type: Object, 
@@ -37,5 +43,4 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.models.User || mongoose.model('User', UserSchema);
-export default
+export default mongoose.models.User || mongoose.model('User', UserSchema);
