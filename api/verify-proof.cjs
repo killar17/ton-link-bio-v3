@@ -1,21 +1,19 @@
-// api/verify-proof.js
-const { TonProofVerifier } = require('@ton/ton-connect');
-const dbConnect = require('../dbConnect'); // Import connection
-const User = require('../models/User'); // Import User model
+import { TonProofVerifier } from '@ton/ton-connect';
+import dbConnect from '../../dbConnect';
+import User from '../../models/User';
 
-// REPLACED WITH ACTUAL VERCEL HTTPS URL
-const HOST_URL = 'https://ton-link-bio-v3-tblm-git-main-killar17s-projects.vercel.app'; 
+const HOST_URL = 'https://ton-link-bio-v3-tblm-git-main-killar17s-projects.vercel.app';
 const verifier = new TonProofVerifier({ host: HOST_URL });
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
     if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed');
+        return res.status(405).json({ success: false, message: 'Method Not Allowed' });
     }
 
-    // 1. Establish Database Connection
-    await dbConnect(); 
-
     try {
+        // 1. Establish Database Connection
+        await dbConnect();
+
         const { address, proof } = req.body;
 
         if (!address || !proof) {
@@ -43,17 +41,17 @@ module.exports = async (req, res) => {
                 }
             );
 
-            res.status(200).json({ 
+            return res.status(200).json({ 
                 success: true, 
                 message: 'Identity Verified & Saved!',
                 tonAddress: user.tonAddress,
             });
         } else {
-            res.status(401).json({ success: false, message: 'TON Proof signature failed.' });
+            return res.status(401).json({ success: false, message: 'TON Proof signature failed.' });
         }
 
-    } catch (e) {
-        console.error('Verification error:', e);
-        res.status(500).json({ success: false, error: 'Server verification error.' });
+    } catch (error) {
+        console.error('Verification error:', error);
+        return res.status(500).json({ success: false, error: error.message || 'Server verification error.' });
     }
-};
+}

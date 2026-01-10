@@ -3,85 +3,141 @@ import { useState, useEffect } from 'react';
 
 function App() {
   const [tonConnectUI] = useTonConnectUI();
-  const userAddress = useTonAddress();
-  const [profile, setProfile] = useState({ name: '', bio: '' });
-  const [status, setStatus] = useState('');
+  const userAddress = useTonAddress(); // This is the wallet address
+  const [status, setStatus] = useState("");
+  const [isVerified, setIsVerified] = useState(false);
+  const [profile, setProfile] = useState({ name: "", bio: "" });
 
+  // 1. Prepare the "Proof Request" as soon as the app loads
   useEffect(() => {
-    if (!tonConnectUI) return;
-
-    // This MUST be set to 'ready' to trigger the signature request
     tonConnectUI.setConnectRequestParameters({
       state: 'ready',
-      value: {
-        tonProof: 'Verify-Me-Please'
-      }
+      value: { tonProof: "VERIFY-TON-D-ID" }
     });
   }, [tonConnectUI]);
 
-  const handleSave = async () => {
-    if (!userAddress) return alert('Please connect your wallet first.');
+  // 2. The function for your NEW Sign In Button
+  const handleSignIn = async () => {
+    if (!userAddress) {
+      setStatus("Error: No wallet connected. Please connect your wallet first.");
+      return;
+    }
 
-    setStatus('Saving...');
+    const wallet = tonConnectUI.wallet;
+    const tonProof = wallet?.connectItems?.[0]?.tonProof;
+
+    if (!tonProof) {
+      setStatus("Error: No proof found. Please disconnect and reconnect your wallet.");
+      return;
+    }
+
+    setStatus("Verifying Identity...");
+
+    try {
+      const response = await fetch('/api/verify-proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address: userAddress,
+          proof: tonProof
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setIsVerified(true);
+        setStatus("✅ Identity Verified!");
+      } else {
+        setStatus(`❌ Verification Failed: ${data.message || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Sign-in error:', err);
+      setStatus(`Server Error: ${err.message}`);
+    }
+  };
+
+  // 3. Function to save the profile
+  const saveProfile = async () => {
     try {
       const response = await fetch('/api/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address: userAddress, ...profile }),
+        body: JSON.stringify({
+          address: userAddress,
+          ...profile
+        }),
       });
 
       const data = await response.json();
       if (data.success) {
-        setStatus('Profile saved.');
-        alert('Profile Saved!');
+        setStatus("✅ Profile saved successfully!");
       } else {
-        setStatus('Save failed.');
-        alert('Save failed.');
+        setStatus(`❌ Failed to save profile: ${data.message}`);
       }
-    } catch (e) {
-      console.error(e);
-      setStatus('Server error.');
-      alert('Server error.');
+    } catch (err) {
+      console.error('Save profile error:', err);
+      setStatus(`Server Error: ${err.message}`);
     }
   };
 
   return (
-    <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial' }}>
+    <div style={{ textAlign: 'center', padding: '50px', fontFamily: 'Arial' }}>
       <h1>TON D ID</h1>
-      <TonConnectButton />
+      
+      {/* Step 1: The Standard Connect Button */}
+      <div style={{ marginBottom: '20px' }}>
+        <TonConnectButton />
+      </div>
 
-      {userAddress && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Settings</h3>
-          <input
-            placeholder="Name"
-            value={profile.name}
-            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-            style={{ display: 'block', margin: '10px auto', padding: '10px', width: '200px' }}
-          />
-          <textarea
-            placeholder="Bio"
-            value={profile.bio}
-            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-            style={{ display: 'block', margin: '10px auto', padding: '10px', width: '200px' }}
-          />
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '10px' }}>
-            <button
-              onClick={handleSave}
-              style={{ backgroundColor: '#0088cc', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px' }}
-            >
-              Save to Profile
-            </button>
-            <button
-              onClick={() => tonConnectUI?.disconnect()}
-              style={{ backgroundColor: '#ccc', color: '#222', padding: '10px 20px', border: 'none', borderRadius: '5px' }}
-            >
-              Disconnect
-            </button>
-          </div>
-          <p style={{ marginTop: '12px', color: '#666' }}>{status}</p>
+      {/* Step 2: Show "Sign In" Button ONLY after wallet is connected AND not verified */}
+      {userAddress && !isVerified && (
+        <div style={{ marginTop: '20px', padding: '20px', border: '1px solid #0088cc', borderRadius: '10px' }}>
+          <p>Wallet Connected: <b>{userAddress.slice(0,6)}...{userAddress.slice(-4)}</b></p>
+          <button 
+            onClick={handleSignIn}
+            style={{ 
+              backgroundColor: '#0088cc', color: 'white', padding: '15px 30px', 
+              border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' 
+            }}
+          >
+            Sign In to Verify Identity
+          </button>
         </div>
       )}
+
+      {/* Step 3: Show Success Message or Dashboard */}
+      {isVerified && (
+        <div>
+          <div style={{ color: 'green', marginTop: '20px' }}>
+            <h2>Welcome, Verified User!</h2>
+            <p>Your ID is now securely stored in our database.</p>
+          </div>
+
+          <div style={{ marginTop: '30px', padding: '20px', backgroundColor: '#f9f9f9', borderRadius: '15px' }}>
+            <h3>Edit Your TON ID</h3>
+            <input 
+              type="text" 
+              placeholder="Display Name" 
+              onChange={(e) => setProfile({...profile, name: e.target.value})}
+              style={{ width: '80%', padding: '10px', marginBottom: '10px' }}
+            />
+            <textarea 
+              placeholder="Bio" 
+              onChange={(e) => setProfile({...profile, bio: e.target.value})}
+              style={{ width: '80%', padding: '10px', marginBottom: '10px' }}
+            />
+            <button onClick={saveProfile} style={{ backgroundColor: 'green', color: 'white', padding: '10px 20px' }}>
+              Save Profile
+            </button>
+          </div>
+        </div>
+      )}
+
+      <p style={{ marginTop: '20px', color: '#666' }}>{status}</p>
     </div>
   );
 }

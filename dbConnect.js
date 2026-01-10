@@ -1,7 +1,5 @@
-// dbConnect.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
-// Caches the connection to reuse it across different serverless invocations
 let cached = global.mongoose;
 
 if (!cached) {
@@ -14,18 +12,22 @@ async function dbConnect() {
   }
 
   if (!cached.promise) {
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI environment variable is not set');
+    }
+
     const opts = {
       bufferCommands: false,
       serverSelectionTimeoutMS: 5000,
     };
 
-    // Uses the MONGO_URI from your Vercel Environment Variables
-    cached.promise = mongoose.connect(process.env.MONGO_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
+    cached.promise = mongoose.connect(process.env.MONGO_URI, opts);
   }
+  
   cached.conn = await cached.promise;
   return cached.conn;
 }
+
+export default dbConnect;
 
 module.exports = dbConnect;

@@ -1,5 +1,4 @@
-// models/User.js
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
   // The verified TON Address is the primary identity
@@ -39,3 +38,4 @@ const UserSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.models.User || mongoose.model('User', UserSchema);
+export default
