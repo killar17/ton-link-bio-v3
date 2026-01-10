@@ -1,5 +1,6 @@
 import dbConnect from '../../dbConnect.js';
 import User from '../../models/User.js';
+import mongoose from 'mongoose';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
@@ -12,7 +13,10 @@ export default async function handler(req, res) {
     console.log('User model type:', typeof User);
     console.log('User.findOneAndUpdate exists:', typeof User.findOneAndUpdate);
 
-    const updatedUser = await User.findOneAndUpdate(
+    // Use mongoose.model directly as fallback for Vercel compatibility
+    const UserModel = User?.findOneAndUpdate ? User : mongoose.model('User');
+
+    const updatedUser = await UserModel.findOneAndUpdate(
       { tonAddress: address },
       { name, bio },
       { new: true, upsert: true } // 'upsert' creates the user if they don't exist

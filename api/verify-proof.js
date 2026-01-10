@@ -1,6 +1,7 @@
 import { TonProofVerifier } from '@ton/ton-connect';
 import dbConnect from '../../dbConnect.js';
 import User from '../../models/User.js';
+import mongoose from 'mongoose';
 
 const HOST_URL = 'https://ton-link-bio-v3-tblm-git-main-killar17s-projects.vercel.app';
 const verifier = new TonProofVerifier({ host: HOST_URL });
@@ -29,7 +30,10 @@ export default async function handler(req, res) {
             console.log('User model type:', typeof User);
             console.log('User.findOneAndUpdate exists:', typeof User.findOneAndUpdate);
 
-            const user = await User.findOneAndUpdate(
+            // Use mongoose.model directly as fallback for Vercel compatibility
+            const UserModel = User?.findOneAndUpdate ? User : mongoose.model('User');
+
+            const user = await UserModel.findOneAndUpdate(
                 { tonAddress: address }, 
                 { 
                     proofs: proof, 
