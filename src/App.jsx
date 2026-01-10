@@ -10,9 +10,16 @@ function App() {
 
   // 1. Prepare the "Proof Request" as soon as the app loads
   useEffect(() => {
+    const generateNonce = () => {
+      return Math.random().toString(36).substring(2, 15) + 
+             Math.random().toString(36).substring(2, 15);
+    };
+
     tonConnectUI.setConnectRequestParameters({
       state: 'ready',
-      value: { tonProof: "VERIFY-TON-D-ID" }
+      value: { 
+        tonProof: generateNonce()
+      }
     });
   }, [tonConnectUI]);
 
@@ -23,17 +30,25 @@ function App() {
       return;
     }
 
-    const wallet = tonConnectUI.wallet;
-    const tonProof = wallet?.connectItems?.[0]?.tonProof;
-
-    if (!tonProof) {
-      setStatus("Error: No proof found. Please disconnect and reconnect your wallet.");
-      return;
-    }
-
     setStatus("Verifying Identity...");
 
     try {
+      // Get the wallet and proof from tonConnectUI
+      const wallet = tonConnectUI.wallet;
+      
+      if (!wallet) {
+        setStatus("Error: Wallet not properly connected.");
+        return;
+      }
+
+      // Extract tonProof from wallet
+      const tonProof = wallet?.connectItems?.find(item => item.name === 'ton_proof')?.proof;
+
+      if (!tonProof) {
+        setStatus("Error: Unable to retrieve proof from wallet. Please reconnect your wallet.");
+        return;
+      }
+
       const response = await fetch('/api/verify-proof', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
