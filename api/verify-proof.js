@@ -1,6 +1,6 @@
 import { TonProofVerifier } from '@ton/ton-connect';
-import dbConnect from '../../dbConnect.js';
-import User from '../../models/User.js';
+import dbConnect from '../dbConnect.js';
+import User from '../models/User.js';
 import mongoose from 'mongoose';
 
 const HOST_URL = 'https://ton-link-bio-v3-tblm-git-main-killar17s-projects.vercel.app';
@@ -13,7 +13,10 @@ export default async function handler(req, res) {
 
     try {
         // 1. Establish Database Connection
-        await dbConnect();
+        await dbConnect().catch(err => {
+            console.error('Database connection failed:', err.message);
+            throw err;
+        });
 
         const { address, proof } = req.body;
 

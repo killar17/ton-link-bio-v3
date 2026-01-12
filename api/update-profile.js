@@ -1,12 +1,15 @@
-import dbConnect from '../../dbConnect.js';
-import User from '../../models/User.js';
+import dbConnect from '../dbConnect.js';
+import User from '../models/User.js';
 import mongoose from 'mongoose';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
   
   try {
-    await dbConnect(); // If this fails, you get a 500 error
+    await dbConnect().catch(err => {
+      console.error('Database connection failed:', err.message);
+      throw err;
+    }); // If this fails, you get a 500 error
     const { address, name, bio } = req.body;
 
     console.log('User model is:', User);

@@ -12,8 +12,10 @@ async function dbConnect() {
   }
 
   if (!cached.promise) {
-    if (!process.env.MONGO_URI) {
-      throw new Error('MONGO_URI environment variable is not set');
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI environment variable is not set');
     }
 
     const opts = {
@@ -21,7 +23,7 @@ async function dbConnect() {
       serverSelectionTimeoutMS: 5000,
     };
 
-    cached.promise = mongoose.connect(process.env.MONGO_URI, opts);
+    cached.promise = mongoose.connect(mongoUri, opts);
   }
   
   cached.conn = await cached.promise;
@@ -29,5 +31,3 @@ async function dbConnect() {
 }
 
 export default dbConnect;
-
-module.exports = dbConnect;
